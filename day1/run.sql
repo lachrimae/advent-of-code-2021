@@ -1,13 +1,14 @@
 .load ./csv
-create virtual table t using csv(filename='numbered.txt');
-select count(t2.c0)
+create virtual table t using csv(header=true, filename='numbered.txt');
+
+select count(t1."index")
 from t t1
 join t t2
-on t2.c0 - 1 = t1.c0
-where t2.c1 > t1.c1;
+on t2."index" - 1 = t1."index"
+where t2.depth > t1.depth;
 
-select count(t4.c0)
+select count(t1."index")
 from t t1
 join t t4
-on t4.c0 - 3 = t1.c0
-where t4.c1 > t1.c1;
+on t4."index" - 3 = t1."index"
+where t4.depth > t1.depth;
