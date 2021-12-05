@@ -1,10 +1,5 @@
 #include <iostream>
 
-// This is a program written for the C preprocessor,
-// which outputs a template metaprogram, which outputs
-// a C++ program, which prints the answer to the challenge
-// from the second day of Advent of Code 2021.
-
 #ifdef PART1
 #include "part1.h"
 #else
