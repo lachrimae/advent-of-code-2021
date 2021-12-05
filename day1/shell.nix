@@ -5,6 +5,5 @@ mkShell {
   buildInputs = [
     gcc
     sqlite
-    coreutils
   ];
 }
