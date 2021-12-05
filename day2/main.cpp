@@ -55,7 +55,9 @@
 
 // Avert your eyes... this is part of how we bully
 // the preprocessor into doing recursion.
-// (There are prettier ways to do this, but they involve a bunch more code.)
+// (There are more elegant ways of doing this, but they 
+// require you to teach the preprocessor basic logic
+// and arithmetic.)
 #define EVAL(...)  EVAL1(EVAL1(EVAL1(__VA_ARGS__)))
 #define EVAL1(...) EVAL2(EVAL2(EVAL2(__VA_ARGS__)))
 #define EVAL2(...) EVAL3(EVAL3(EVAL3(__VA_ARGS__)))
