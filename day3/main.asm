@@ -81,26 +81,28 @@ _start_found_newline:
 
   ; prepare to call asciify_bits
   ; set rdi to linelen
+  mov rsi, workspace
   xor rax, rax
   mov al, [linelen]
+  dec al
+  mov rbx, 4
+  mul rbx
   mov rdi, rax
-  dec rdi ; we don't care about the '\n' at the end of the line
-  mov rax, workspace
-
-  ; set rdi to the position after the long ints we used
-  mov rdx, linelen
-  dec rdx ; we don't care about the newline char
-  mov rcx, 4 ; long ints
-  ;mul rdx, rcx
-  mov rdi, rdx
-
+  mov rdx, rax
+  add rdx, workspace
+  push rdx
   call asciify_bits
+  pop rdx
 
-  ; write(stdout, bitstring, 5)
-  mov rax, SYS_WRITE
+  ; write(stdout, output string, linelen)
   mov rdi, STDOUT
-  mov rsi, workspace
-  mov rdx, 5
+  mov rsi, rdx
+  xor rax, rax
+  mov al, [linelen]
+  mov rdx, rax
+  dec rax
+  mov byte [rax+rsi], 10
+  mov rax, SYS_WRITE
   syscall
 
   ; exit(0)
@@ -132,41 +134,46 @@ asciify_bits_end:
   leave
   ret
 
-; INPUTS
-; rax must be a value such that 0 <= rax < linelen
-; OUTPUT
-; the outputs will go into the .data section
+; no inputs. relies on linelen, buffer, inputlen and workspace reserved vars
 average_each_bit:
   enter 0, 0
   xor r11, r11
+  ; rbx = end of input
+  mov rbx, buffer
+  add rbx, inputlen
+  ; rcx = start of workspace
+  mov rcx, workspace
 average_each_bit_outer_loop:
-  ; for (int i = 0; i < inputlen; i++)
-  cmp rax, [inputlen]
-  jge average_each_bit_outer_loop_exit
-;average_each_bit_inner_loop:
-;  ; for (int j = 0; j < rdi; j += linelen)
-;  cmp r11, rdi
-;  jge average_each_bit_inner_loop_exit
-;  mov rsi, rdi
-;  mov r12, bit1
-;  push rdi
-;  mov rdi, QWORD [r12 + rax*4]
-;  push rax
-;  push r11
-;  ; average(rdi, rsi)
-;  call average
-;  ; here we save the bit
-;  mov dword [bit1 + rcx*4], eax
-;  pop r11
-;  pop rdi
-;  pop rax
-;  mov rdi, rsi
-;  inc r11
-;  jmp average_each_bit_inner_loop
-average_each_bit_inner_loop_exit:
-  inc rax
+  ; for (int r11 = 0; r11 < inputlen; r11 ++)
+  inc r11
+  cmp r11, [inputlen]
+  dec r11
+  jge average_each_bit_exit
+  mov rdx, buffer
+  add rdx, r11
+average_each_bit_inner_loop:
+  ; for (int rdx = buffer + r11; rdx < buffer+inputlen; rdx += linelen)
+  cmp rdx, rbx
+  jge average_each_bit_outer_loop_reenter
+  ; place the new value into rax and de-asciify it
+  xor rax, rax
+  mov al, byte [rdx]
+  sub al, 48
+  ; add either 0 or 1 to the start of workspace offset by r11 quadwords
+  add [rcx+4*r11], rax
+  xor rax, rax
+  mov al, byte [linelen]
+  add rdx, rax
+  jmp average_each_bit_inner_loop
+average_each_bit_outer_loop_reenter:
+  inc r11
   jmp average_each_bit_outer_loop
-average_each_bit_outer_loop_exit:
+average_each_bit_exit:
+  xor r11, r11
+  ;
+  ; TODO:
+  ; so far we've only summed bits, time to truly average them
+  ;
   leave
   ret
 

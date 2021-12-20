@@ -4,3 +4,6 @@ build:
 
 run: build
 	./main input.txt > out.txt
+
+debug: build
+	gdb main
