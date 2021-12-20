@@ -30,6 +30,7 @@ panic:
 _start:
   pop rdi ; argc
   cmp rdi, 2
+  ; require one CLI argument
   jne panic
   pop rdi ; argv[0]: executable invocation name
   pop rdi ; argv[1]: file name
@@ -40,7 +41,7 @@ _start:
   xor rdx, rdx
   syscall
 
-  ; read from fd to buf
+  ; read the input file into the buffer
   mov rdi, rax
   mov rax, SYS_READ
   mov rsi, buffer
@@ -52,6 +53,8 @@ _start:
   mov rax, SYS_CLOSE
   syscall
 
+  ; this has been tested and shown to be working
+  ; we want to find the length of each line
   ; rax = '\n' // newlines are LF on Linux
   mov rax, 10
   mov rdi, buffer
@@ -74,17 +77,23 @@ _start_found_newline:
   mov rax, rsi
   mov byte [linelen], al
 
-;  ; brk(4 * len(first line))
-;  mov rax, rsi
-;  mov rdi, 4
-;  mul rdi
-;  mov rdi, rax
-;  mov rax, SYS_BRK
-;  syscall
-;  cmp rax, 0
-;  jne panic
-
   call average_each_bit
+
+  ; prepare to call asciify_bits
+  ; set rdi to linelen
+  xor rax, rax
+  mov al, [linelen]
+  mov rdi, rax
+  dec rdi ; we don't care about the '\n' at the end of the line
+  mov rax, workspace
+
+  ; set rdi to the position after the long ints we used
+  mov rdx, linelen
+  dec rdx ; we don't care about the newline char
+  mov rcx, 4 ; long ints
+  ;mul rdx, rcx
+  mov rdi, rdx
+
   call asciify_bits
 
   ; write(stdout, bitstring, 5)
@@ -99,19 +108,25 @@ _start_found_newline:
   xor rdi, rdi
   syscall
 
+; this has been tested and shown to be working
+; rsi: position in memory to start asciifying quadwords
+; rdi: length of the memory segment
+; rdx: position in memory to output bytes
 asciify_bits:
   enter 0, 0
+  ; r11 = 0
   xor r11, r11
-  ; rax = 4 * length of first line, not including newline
-  mov rax, [linelen]
-  dec rax
-  mov rdx, qword 4
-  mul rdx
+  ; r12 = length of first line minus one
 asciify_bits_current_bit:
-  cmp r11, [linelen]
+  cmp r11, rdi
   jge asciify_bits_end
-  mov al, [rax + r11]
-  inc r11
+  ; this one has to grow by 4*r11 actually
+  mov al, [rsi + r11]
+  ; to ascii
+  add al, 48
+  mov [rdx], al
+  inc rdx
+  add r11, 4
   jmp asciify_bits_current_bit
 asciify_bits_end:
   leave
