@@ -94,6 +94,11 @@ _start_found_newline:
   mov rax, rsi
   mov byte [linelen], al
 
+  ; This is where the real action happens.
+  ; I realized that choosing the most common
+  ; bit in a column is the same thing as averaging
+  ; the column (under integer division). So that's
+  ; what this procedure does.
   call average_each_bit
 
   ; prepare to call asciify_bits
