@@ -1,4 +1,4 @@
-Day 2
+Day 3
 
 I solved part 1 of this challenge using x86\_64 assembly code.
 The resulting executable can be called using `main input.txt e` to get the epsilon value in binary, or `main input.txt g` to get the gamma value.
