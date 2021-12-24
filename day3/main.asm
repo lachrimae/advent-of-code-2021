@@ -220,18 +220,16 @@ average_each_bit_division_loop:
   div rbx ; TODO: SIGFPE due to rbx == 0 somehow
   ; if the quotient is less than or equal to two,
   ; then there are >50% 1s in the column.
-  push rax
-  mov al, byte [varmode]
-  cmp al, 1
+  xor rbx, rbx
+  mov bl, byte [varmode]
+  cmp bl, 1
   je average_each_bit_gamma_comparison
   jmp average_each_bit_epsilon_comparison
 average_each_bit_gamma_comparison:
-  pop rax
   cmp rax, 2
   jge average_each_bit_division_loop_insert_zero
   jmp average_each_bit_division_loop_insert_one
 average_each_bit_epsilon_comparison:
-  pop rax
   cmp rax, 2
   jge average_each_bit_division_loop_insert_one
   jmp average_each_bit_division_loop_insert_zero
