@@ -11,15 +11,17 @@ READONLY    equ 0
 BUFLEN      equ 16384
 
 section .bss
-; we desire five integers to track the five bits of our output
+; here we track some basic metadata about the data in the inputbuf
+varmode: resb 1
 linelen: resb 1
 inputlen: resb 4
-; buffer is where we store the input read from file
-buffer: resb BUFLEN
+numlines: resb 4
 ; workspace is our "heap".
 ; 48 bytes can be used for arithmetic
-; then there is tons left over for the result string etc
+; then there is tons left over for the output string
 workspace: resb 128
+; we store the input in this inputbuf
+inputbuf: resb BUFLEN
 
 section .text
 panic:
@@ -27,10 +29,17 @@ panic:
   mov rdi, 1
   syscall
 
+usegamma:
+  mov byte [varmode], 1
+  jmp _start_finished_processing_input
+useepsilon:
+  mov byte [varmode], 0
+  jmp _start_finished_processing_input
+
 _start:
   pop rdi ; argc
-  cmp rdi, 2
-  ; require one CLI argument
+  cmp rdi, 3
+  ; require two CLI arguments
   jne panic
   pop rdi ; argv[0]: executable invocation name
   pop rdi ; argv[1]: file name
@@ -41,10 +50,10 @@ _start:
   xor rdx, rdx
   syscall
 
-  ; read the input file into the buffer
+  ; read the input file into the inputbuf
   mov rdi, rax
   mov rax, SYS_READ
-  mov rsi, buffer
+  mov rsi, inputbuf
   mov rdx, BUFLEN
   syscall
   mov dword [inputlen], eax
@@ -53,25 +62,33 @@ _start:
   mov rax, SYS_CLOSE
   syscall
 
-  ; this has been tested and shown to be working
+  ; get the varmode
+  pop rdi
+  mov rax, [rdi]
+  cmp al, 101 ; "e" in ASCII, use epsilon
+  je useepsilon
+  cmp al, 103 ; "g" in ASCII, use gamma
+  je usegamma
+  ; if neither worked then panic
+  jmp panic
+_start_finished_processing_input:
+
   ; we want to find the length of each line
-  ; rax = '\n' // newlines are LF on Linux
+  ; rax = '\n' are newlines are LF on Linux
   mov rax, 10
-  mov rdi, buffer
-  mov rsi, buffer
-  ; while(1)
+  mov rdi, inputbuf
+  mov rsi, inputbuf
+  ; while(1): check if *rsi is a newline. if so, break
 _start_find_newline:
   cmp byte [rsi], al
-  ; if the byte is zero
   je _start_found_newline
-  ; else add one and continue
   inc rsi
   jmp _start_find_newline
 _start_found_newline:
   ; then add one and break
   inc rsi
 
-  ; rsi = buffer start - occurrence of first '\n'
+  ; rsi = inputbuf start - occurrence of first '\n'
   sub rsi, rdi
   ; bring this down to one byte and move it to linelen
   mov rax, rsi
@@ -81,7 +98,7 @@ _start_found_newline:
 
   ; prepare to call asciify_bits
   ; set rdi to linelen
-  mov rsi, workspace
+  mov rsi, r12
   xor rax, rax
   mov al, [linelen]
   dec al
@@ -90,13 +107,11 @@ _start_found_newline:
   mov rdi, rax
   mov rdx, rax
   add rdx, workspace
-  push rdx
   call asciify_bits
-  pop rdx
 
   ; write(stdout, output string, linelen)
   mov rdi, STDOUT
-  mov rsi, rdx
+  mov rsi, r12
   xor rax, rax
   mov al, [linelen]
   mov rdx, rax
@@ -110,8 +125,7 @@ _start_found_newline:
   xor rdi, rdi
   syscall
 
-; this has been tested and shown to be working
-; rsi: position in memory to start asciifying quadwords
+; rsi: position in memory to start asciifying bytes
 ; rdi: length of the memory segment
 ; rdx: position in memory to output bytes
 asciify_bits:
@@ -128,93 +142,108 @@ asciify_bits_current_bit:
   add al, 48
   mov [rdx], al
   inc rdx
-  add r11, 4
+  inc r11
   jmp asciify_bits_current_bit
 asciify_bits_end:
   leave
   ret
 
-; no inputs. relies on linelen, buffer, inputlen and workspace reserved vars
+; no inputs. relies on linelen, inputbuf, inputlen and workspace reserved vars
+; output: r12 indicates the beginning of the program output
 average_each_bit:
   enter 0, 0
+  ; r11 is the cursor into the inputbuf
   xor r11, r11
+  ; r12 is the index within the current line
+  xor r12, r12
+  ; r13 is the number of EOLs encountered so far
+  xor r13, r13
+  ; rdx = beginning of input
   ; rbx = end of input
-  mov rbx, buffer
-  add rbx, inputlen
+  mov rbx, inputbuf
+  add ebx, dword [inputlen]
   ; rcx = start of workspace
   mov rcx, workspace
-average_each_bit_outer_loop:
-  ; for (int r11 = 0; r11 < inputlen; r11 ++)
-  inc r11
-  cmp r11, [inputlen]
-  dec r11
-  jge average_each_bit_exit
-  mov rdx, buffer
-  add rdx, r11
-average_each_bit_inner_loop:
-  ; for (int rdx = buffer + r11; rdx < buffer+inputlen; rdx += linelen)
-  cmp rdx, rbx
-  jge average_each_bit_outer_loop_reenter
-  ; place the new value into rax and de-asciify it
+average_each_bit_summation_loop:
+  mov rax, r12
+  inc rax
+  cmp al, byte [linelen]
+  jae average_each_bit_summation_loop_newline
+  mov rax, r11
+  cmp eax, dword [inputlen]
+  jae average_each_bit_division_loop_enter
+  
   xor rax, rax
-  mov al, byte [rdx]
-  sub al, 48
-  ; add either 0 or 1 to the start of workspace offset by r11 quadwords
-  add [rcx+4*r11], rax
+  mov al, byte [inputbuf+r11]
+  sub rax, 48
+  add dword [workspace+4*r12], eax
+
+  inc r11
+  inc r12
+  jmp average_each_bit_summation_loop
+average_each_bit_summation_loop_newline:
+  inc r11
+  mov r12, 0
+  inc r13
+  jmp average_each_bit_summation_loop
+average_each_bit_division_loop_enter:
+  ; saving this result from the summation loop
+  mov rax, r13
+  mov dword [numlines], eax
+
+  ; r12 is the beginning of our output memory segment
   xor rax, rax
   mov al, byte [linelen]
-  add rdx, rax
-  jmp average_each_bit_inner_loop
-average_each_bit_outer_loop_reenter:
-  inc r11
-  jmp average_each_bit_outer_loop
-average_each_bit_exit:
+  dec rax
+  mov rbx, 4
+  mul ebx
+  mov r12, workspace
+  add r12, rax
+
+  ; r11 is the index into our list of vars in workspace
   xor r11, r11
-  ;
-  ; TODO:
-  ; so far we've only summed bits, time to truly average them
-  ;
-  leave
-  ret
+average_each_bit_division_loop:
+  mov rax, r11
+  inc rax
+  cmp al, byte [linelen]
+  jge average_each_bit_exit
 
-
-; INPUTS
-; rdi must be the initial address of the loop
-; rsi must be the length of the loop
-; OUTPUT
-; eax will be 1 if at least half of the elements
-;   were 1, and it will otherwise be zero
-average:
-  enter 0, 0
+  ; upper bytes of our dividend are in edx
+  ; lower bytes will be in eax
+  xor edx, edx
   xor rax, rax
-  ; we want r11 to contain the terminal
-  ; address of the summation loop
-  mov r11, rdi
-  add r11, rsi
-average_body:
-  add eax, dword [rdi]
-  inc rdi
-  ; if the next address is less than
-  ; the terminal address...
-  cmp rdi, r11
-  ; return to the start of the loop
-  jb average_body
-  ; but otherwise return the mode of the
-  ; inputs, assuming they were all 1 or 0
-  xor rdx, rdx 
-  div rsi
-  ; we wish to test whether the quotient is
-  ; greater than or equal than 2.
-  ; we do so by subtracting two from the quotient
-  ; and checking whether it is nonnegative
-  sub eax, 2
-  test eax, eax
-  jns average_one
-average_zero:
-  xor rax, rax
-  jmp average_done
-average_one:
+  ; divisor is the number of 1s so far in this column
+  mov eax, dword [workspace+4*r11]
+  mov rbx, rax
+  ; dividend is the number of lines in the column
+  mov eax, dword [numlines]
+  div rbx ; TODO: SIGFPE due to rbx == 0 somehow
+  ; if the quotient is less than or equal to two,
+  ; then there are >50% 1s in the column.
+  push rax
+  mov al, byte [varmode]
+  cmp al, 1
+  je average_each_bit_gamma_comparison
+  jmp average_each_bit_epsilon_comparison
+average_each_bit_gamma_comparison:
+  pop rax
+  cmp rax, 2
+  jge average_each_bit_division_loop_insert_zero
+  jmp average_each_bit_division_loop_insert_one
+average_each_bit_epsilon_comparison:
+  pop rax
+  cmp rax, 2
+  jge average_each_bit_division_loop_insert_one
+  jmp average_each_bit_division_loop_insert_zero
+average_each_bit_division_loop_insert_one:
   mov rax, 1
-average_done:
+  jmp average_each_bit_division_loop_reenter
+average_each_bit_division_loop_insert_zero:
+  xor rax, rax
+average_each_bit_division_loop_reenter:
+  mov byte [r12+r11], al
+  inc r11
+  jmp average_each_bit_division_loop
+average_each_bit_exit:
   leave
   ret

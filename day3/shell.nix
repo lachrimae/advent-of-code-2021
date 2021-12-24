@@ -4,6 +4,7 @@ with nixpkgs;
 mkShell {
   buildInputs = [
     gcc
+    gdb
     glibc
     nasm
   ];
