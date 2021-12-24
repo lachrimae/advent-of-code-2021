@@ -31,10 +31,10 @@ panic:
 
 usegamma:
   mov byte [varmode], 1
-  jmp _start_finished_processing_input
+  jmp _start_finished_processing_argv
 useepsilon:
   mov byte [varmode], 0
-  jmp _start_finished_processing_input
+  jmp _start_finished_processing_argv
 
 _start:
   pop rdi ; argc
@@ -71,8 +71,7 @@ _start:
   je usegamma
   ; if neither worked then panic
   jmp panic
-_start_finished_processing_input:
-
+_start_finished_processing_argv:
   ; we want to find the length of each line
   ; rax = '\n' are newlines are LF on Linux
   mov rax, 10
@@ -94,11 +93,6 @@ _start_found_newline:
   mov rax, rsi
   mov byte [linelen], al
 
-  ; This is where the real action happens.
-  ; I realized that choosing the most common
-  ; bit in a column is the same thing as averaging
-  ; the column (under integer division). So that's
-  ; what this procedure does.
   call average_each_bit
 
   ; prepare to call asciify_bits
@@ -141,9 +135,8 @@ asciify_bits:
 asciify_bits_current_bit:
   cmp r11, rdi
   jge asciify_bits_end
-  ; this one has to grow by 4*r11 actually
   mov al, [rsi + r11]
-  ; to ascii
+  ; the ASCII range 48-57 includes the chars '0'-'9'.
   add al, 48
   mov [rdx], al
   inc rdx
