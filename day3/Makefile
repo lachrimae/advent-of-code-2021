@@ -4,6 +4,7 @@ build:
 
 run: build
 	echo "$$(($$((2#$$(./main input.txt g))) * $$((2#$$(./main input.txt e)))))"
+	python main.py
 
 debug: build
 	gdb main

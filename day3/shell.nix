@@ -6,5 +6,6 @@ mkShell {
     gcc
     gdb
     nasm
+    python3
   ];
 }
