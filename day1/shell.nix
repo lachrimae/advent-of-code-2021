@@ -3,7 +3,6 @@ in
 with nixpkgs;
 mkShell {
   buildInputs = [
-    gcc
-    sqlite
+    python3
   ];
 }
