@@ -5,7 +5,6 @@ mkShell {
   buildInputs = [
     gcc
     gdb
-    glibc
     nasm
   ];
 }
