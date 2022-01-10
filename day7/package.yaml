@@ -4,7 +4,6 @@ ghc-options: -Wall
 
 dependencies:
   - base
-  - containers
   - attoparsec
   - text
 
