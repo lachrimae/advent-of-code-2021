@@ -1,0 +1,10 @@
+let nixpkgs = import <nixpkgs> {};
+in
+with nixpkgs;
+mkShell {
+  buildInputs = [
+    stack
+    ghc
+    hpack
+  ];
+}

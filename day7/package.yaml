@@ -1,0 +1,13 @@
+name: day7
+
+ghc-options: -Wall
+
+dependencies:
+  - base
+  - containers
+  - attoparsec
+  - text
+
+executable:
+  main: Main.hs
+  source-dirs: .
