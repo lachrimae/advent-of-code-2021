@@ -7,7 +7,6 @@ struct Position {
 // in fact they are "metafunctions" which will be executed at
 // compile-time to help write our program.
 
-
 template<int n, Position p>
 struct up {
   static constexpr struct Position value = {
