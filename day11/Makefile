@@ -1,5 +1,5 @@
 default:
-	g++ ./main.cpp ./octopus.cpp ./queue.cpp -o main -g -O0
+	g++ ./main.cpp ./oct_array.cpp ./octopus.cpp ./queue.cpp -o main -g -O0
 
 debug: default
 	gdb main

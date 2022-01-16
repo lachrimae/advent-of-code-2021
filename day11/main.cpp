@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 #include "octopus.hpp"
+#include "oct_array.hpp"
 #include "queue.hpp"
 #define INPUT_BUF_LEN 1024
-#define MAX_OCT_ARRAY_DIM 20
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -27,8 +27,7 @@ int main(int argc, char **argv) {
   // we might be overallocating here,
   // but it's not a big deal
   // TODO: somehow this allocation is causing segfaults
-  size_t array_len = MAX_OCT_ARRAY_DIM * sizeof(Octopus);
-  Octopus** oct_array = (Octopus**)std::vector<char>(array_len * array_len).data();
+  OctopusArray oct_array;
 
   std::string line;
   size_t height = 0;
@@ -38,12 +37,11 @@ int main(int argc, char **argv) {
     width = line.length();
     for (int i = 0; i < width; i++) {
       int energy = std::stoi(std::string(&line[i], 1));
-      oct_array[height][i] = Octopus(energy);
+      Octopus oct = Octopus(energy);
+      oct_array.set(height, i, &oct);
     }
     height++;
   }
   input_file.close();
-
-  std::cout << oct_array[0][0].energy_level << '\n';
   return 0;
 }
