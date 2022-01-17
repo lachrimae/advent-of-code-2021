@@ -1,21 +1,27 @@
 #ifndef OCTOPUS_ARRAY
-#include <vector>
-#include <tuple>
-#include "octopus.hpp"
 #define OCTOPUS_ARRAY
+#include <vector>
+#include "octopus.hpp"
 #define MAX_OCT_ARRAY_DIM 20
 
-constexpr size_t ARRAY_LEN = MAX_OCT_ARRAY_DIM * sizeof(Octopus);
+constexpr int ARRAY_LEN = MAX_OCT_ARRAY_DIM * sizeof(Octopus);
 
-std::vector<std::tuple<int, int>> neighbours(int i, int j);
+typedef struct OctopusArrayIndex {
+  int i;
+  int j;
+} OctopusArrayIndex;
 
 class OctopusArray {
   private:
     Octopus *arr;
   public:
+    int max_width = 0;
+    int max_height = 0;
     OctopusArray();
     ~OctopusArray();
-    Octopus *get(int i, int j);
-    void set(int i, int j, Octopus *oct);
+    Octopus *get(OctopusArrayIndex idx);
+    void set(OctopusArrayIndex idx, Octopus *oct);
+    std::vector<OctopusArrayIndex> neighbours(OctopusArrayIndex idx);
+    void display();
 };
 #endif
