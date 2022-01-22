@@ -98,17 +98,20 @@ fn main() {
 
     // extract a vector of all the nodes. each node will be
     // uniquely identified by its index in this vector.
-    let mut nodes: Vec<String> = vec![];
-    for edge in edge_list.iter() {
-        let lesser = String::from(edge.lesser());
-        if !nodes.contains(&lesser) {
-            nodes.push(lesser);
+    let nodes: Vec<String> = {
+        let mut nodes: Vec<String> = vec![];
+        for edge in edge_list.iter() {
+            let lesser = String::from(edge.lesser());
+            if !nodes.contains(&lesser) {
+                nodes.push(lesser);
+            }
+            let greater = String::from(edge.greater());
+            if !nodes.contains(&greater) {
+                nodes.push(greater);
+            }
         }
-        let greater = String::from(edge.greater());
-        if !nodes.contains(&greater) {
-            nodes.push(greater);
-        }
-    }
+        nodes
+    };
 
     // rearticulate the graph as a 2-dimensional vector of booleans
     let adjacency_matrix: Vec<Vec<bool>> = {
@@ -130,8 +133,7 @@ fn main() {
     let start_index = nodes.iter().position(|x| x == &"start").unwrap();
     let end_index = nodes.iter().position(|x| x == &"end").unwrap();
 
-    // block scope to prevent part 1's local variables and part 2's
-    // local variables from getting mixed up
+    // PART 1
     {
         let mut paths_to_end: u32 = 0;
         let mut exploration_stack: Vec<Frame> = vec![];
@@ -180,8 +182,7 @@ fn main() {
         println!("{}", paths_to_end);
     }
 
-    // block scope to prevent part 1's local variables and part 2's
-    // local variables from getting mixed up
+    // PART 2
     {
         let mut paths_to_end: u32 = 0;
         let mut exploration_stack: Vec<Frame> = vec![];
