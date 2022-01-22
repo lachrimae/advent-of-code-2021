@@ -213,7 +213,7 @@ fn main() {
                 } else {
                     let old_condition = is_large_node(&nodes[*node_index])
                         || small_node_was_not_visited(&exploration_stack, *node_index);
-                    let new_condition = if !old_condition {
+                    let new_condition = !old_condition && {
                         // !old_condition implies that the node is small, and that we have
                         // visited it before
                         match selected_special_small_cave_at_height {
@@ -226,8 +226,6 @@ fn main() {
                             }
                             Some(_) => false,
                         }
-                    } else {
-                        false
                     };
                     if old_condition || new_condition {
                         dead_end = false;
