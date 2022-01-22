@@ -127,98 +127,38 @@ fn main() {
     let start_index = nodes.iter().position(|x| x == &"start").unwrap();
     let end_index = nodes.iter().position(|x| x == &"end").unwrap();
 
-    // set up the solution to part1
-    let mut paths_to_end: u32 = 0;
-    let mut exploration_stack: Vec<Frame> = vec![];
-    let mut current_frame = Frame {
-        node_index: start_index,
-        max_node_followed: 0,
-    };
-    let mut dead_end;
+    // block scope to prevent part 1's local variables and part 2's
+    // local variables from getting mixed up
+    {
+        let mut paths_to_end: u32 = 0;
+        let mut exploration_stack: Vec<Frame> = vec![];
+        let mut current_frame = Frame {
+            node_index: start_index,
+            max_node_followed: 0,
+        };
+        let mut dead_end;
 
-    loop {
-        dead_end = true;
-        for (node_index, is_adjacent) in adjacency_matrix[current_frame.node_index]
-            .iter()
-            .enumerate()
-            .collect::<Vec<(usize, &bool)>>()[current_frame.max_node_followed..]
-            .iter()
-        {
-            if !(*is_adjacent) {
-                continue;
-            } else if *node_index == start_index {
-                continue;
-            } else if *node_index == end_index {
-                paths_to_end += 1;
-                continue;
-            } else if is_large_node(&nodes[*node_index])
-                || small_node_was_not_visited(&exploration_stack, *node_index)
+        loop {
+            dead_end = true;
+            for (node_index, is_adjacent) in adjacency_matrix[current_frame.node_index]
+                .iter()
+                .enumerate()
+                .collect::<Vec<(usize, &bool)>>()[current_frame.max_node_followed..]
+                .iter()
             {
-                dead_end = false;
-                current_frame.max_node_followed = *node_index;
-                exploration_stack.push(current_frame);
-                current_frame = Frame {
-                    node_index: *node_index,
-                    max_node_followed: 0,
-                };
-                break;
-            }
-        }
-        if dead_end {
-            if exploration_stack.len() == 0 {
-                break;
-            }
-            current_frame = exploration_stack.pop().unwrap();
-            current_frame.max_node_followed += 1;
-        }
-    }
-    println!("{}", paths_to_end);
-
-    paths_to_end = 0;
-    let mut exploration_stack: Vec<Frame> = vec![];
-    let mut current_frame = Frame {
-        node_index: start_index,
-        max_node_followed: 0,
-    };
-    // the solution to part2 is very similar to the solution to part1,
-    // but we track whether we have visited any small caves twice using
-    // these two variables:
-    let mut selected_special_small_cave_at: Option<usize> = None;
-    let mut stack_height: usize = 0;
-    loop {
-        dead_end = true;
-        for (node_index, is_adjacent) in adjacency_matrix[current_frame.node_index]
-            .iter()
-            .enumerate()
-            .collect::<Vec<(usize, &bool)>>()[current_frame.max_node_followed..]
-            .iter()
-        {
-            if !(*is_adjacent) {
-                continue;
-            } else if *node_index == start_index {
-                continue;
-            } else if *node_index == end_index {
-                paths_to_end += 1;
-                continue;
-            } else {
-                let old_condition = is_large_node(&nodes[*node_index])
-                    || small_node_was_not_visited(&exploration_stack, *node_index);
-                let new_condition = if !old_condition {
-                    match selected_special_small_cave_at {
-                        None => {
-                            selected_special_small_cave_at = Some(stack_height);
-                            true
-                        }
-                        Some(_) => false,
-                    }
-                } else {
-                    false
-                };
-                if old_condition || new_condition {
+                if !(*is_adjacent) {
+                    continue;
+                } else if *node_index == start_index {
+                    continue;
+                } else if *node_index == end_index {
+                    paths_to_end += 1;
+                    continue;
+                } else if is_large_node(&nodes[*node_index])
+                    || small_node_was_not_visited(&exploration_stack, *node_index)
+                {
                     dead_end = false;
                     current_frame.max_node_followed = *node_index;
                     exploration_stack.push(current_frame);
-                    stack_height += 1;
                     current_frame = Frame {
                         node_index: *node_index,
                         max_node_followed: 0,
@@ -226,18 +166,95 @@ fn main() {
                     break;
                 }
             }
-        }
-        if dead_end {
-            if exploration_stack.len() == 0 {
-                break;
-            }
-            current_frame = exploration_stack.pop().unwrap();
-            current_frame.max_node_followed += 1;
-            stack_height -= 1;
-            if selected_special_small_cave_at.map_or(false, |height| height == stack_height) {
-                selected_special_small_cave_at = None;
+            if dead_end {
+                if exploration_stack.len() == 0 {
+                    break;
+                }
+                current_frame = exploration_stack.pop().unwrap();
+                current_frame.max_node_followed += 1;
             }
         }
+        println!("{}", paths_to_end);
     }
-    println!("{}", paths_to_end);
+
+    // block scope to prevent part 1's local variables and part 2's
+    // local variables from getting mixed up
+    {
+        let mut paths_to_end: u32 = 0;
+        let mut exploration_stack: Vec<Frame> = vec![];
+        let mut current_frame = Frame {
+            node_index: start_index,
+            max_node_followed: 0,
+        };
+        let mut dead_end;
+        // the solution to part2 is very similar to the solution to part1,
+        // but we track whether we have visited any small caves twice using
+        // these two variables:
+        let mut selected_special_small_cave_at_height: Option<usize> = None;
+        let mut stack_height: usize = 0;
+        loop {
+            dead_end = true;
+            for (node_index, is_adjacent) in adjacency_matrix[current_frame.node_index]
+                .iter()
+                .enumerate()
+                .collect::<Vec<(usize, &bool)>>()[current_frame.max_node_followed..]
+                .iter()
+            {
+                if !(*is_adjacent) {
+                    continue;
+                } else if *node_index == start_index {
+                    continue;
+                } else if *node_index == end_index {
+                    paths_to_end += 1;
+                    continue;
+                } else {
+                    let old_condition = is_large_node(&nodes[*node_index])
+                        || small_node_was_not_visited(&exploration_stack, *node_index);
+                    let new_condition = if !old_condition {
+                        // !old_condition implies that the node is small, and that we have
+                        // visited it before
+                        match selected_special_small_cave_at_height {
+                            // if we haven't selected a special node to go through twice yet,
+                            // we can do so here to bypass the fact we have visited the small
+                            // node already
+                            None => {
+                                selected_special_small_cave_at_height = Some(stack_height);
+                                true
+                            }
+                            Some(_) => false,
+                        }
+                    } else {
+                        false
+                    };
+                    if old_condition || new_condition {
+                        dead_end = false;
+                        current_frame.max_node_followed = *node_index;
+                        exploration_stack.push(current_frame);
+                        stack_height += 1;
+                        current_frame = Frame {
+                            node_index: *node_index,
+                            max_node_followed: 0,
+                        };
+                        break;
+                    }
+                }
+            }
+            if dead_end {
+                if exploration_stack.len() == 0 {
+                    break;
+                }
+                current_frame = exploration_stack.pop().unwrap();
+                current_frame.max_node_followed += 1;
+                stack_height -= 1;
+                if selected_special_small_cave_at_height
+                    .map_or(false, |height| height == stack_height)
+                {
+                    // we are backtracking through a position at which we selected a small
+                    // cave to go through twice, so we can clear our selection
+                    selected_special_small_cave_at_height = None;
+                }
+            }
+        }
+        println!("{}", paths_to_end);
+    }
 }
