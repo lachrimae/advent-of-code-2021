@@ -145,6 +145,7 @@ fn main() {
     // these two variables:
     let mut selected_special_small_cave_at_height: Option<usize> = None;
     let mut stack_height: usize = 0;
+    let mut iterations: u64 = 0;
     loop {
         dead_end = true;
         for (node_index, is_adjacent) in adjacency_matrix[current_frame.node_index]
@@ -153,6 +154,7 @@ fn main() {
             .collect::<Vec<(usize, &bool)>>()[current_frame.max_node_followed..]
             .iter()
         {
+            iterations += 1;
             if !(*is_adjacent) {
                 continue;
             } else if *node_index == start_index {
@@ -216,4 +218,5 @@ fn main() {
     }
     println!("part 1: {}", paths_to_end_part1);
     println!("part 2: {}", paths_to_end_part2);
+    println!("total iterations: {}", iterations);
 }
