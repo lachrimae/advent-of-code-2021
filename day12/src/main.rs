@@ -55,16 +55,7 @@ struct Frame {
     max_node_followed: usize,
 }
 
-struct Frame2 {
-    node_index: usize,
-    // the max_node_followed records the maximum
-    // index that has been followed so far.
-    max_node_followed: usize,
-    selected_special_cave: bool,
-}
-
 pub struct Stack(Vec<Frame>);
-pub struct Stack2(Vec<Frame2>);
 
 fn is_large_node(node: &String) -> bool {
     for c in node.chars() {
@@ -76,17 +67,6 @@ fn is_large_node(node: &String) -> bool {
 }
 
 impl Stack {
-    fn small_node_was_not_visited(&self, node_index: usize) -> bool {
-        for frame in &self.0 {
-            if frame.node_index == node_index {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-
-impl Stack2 {
     fn small_node_was_not_visited(&self, node_index: usize) -> bool {
         for frame in &self.0 {
             if frame.node_index == node_index {
@@ -146,9 +126,6 @@ fn main() {
         }
     }
 
-    println!("nodes: {:#?}", nodes);
-    println!("matrix: {:?}", adjacency_matrix);
-
     let start_index = nodes.iter().position(|x| x == &"start").unwrap();
     let end_index = nodes.iter().position(|x| x == &"end").unwrap();
 
@@ -192,13 +169,13 @@ fn main() {
     println!("{}", paths_to_end);
 
     paths_to_end = 0;
-    let mut exploration_stack: Stack2 = Stack2(vec![]);
-    let mut current_frame = Frame2 {
+    let mut exploration_stack: Stack = Stack(vec![]);
+    let mut current_frame = Frame {
         node_index: start_index,
         max_node_followed: 0,
-        selected_special_cave: false,
     };
-    let mut special_small_cave: Option<usize> = None;
+    let mut selected_special_small_cave_at: Option<usize> = None;
+    let mut stack_height: usize = 0;
     loop {
         dead_end = true;
         for (node_index, is_adjacent) in adjacency_matrix[current_frame.node_index].iter().enumerate().collect::<Vec<(usize, &bool)>>()[current_frame.max_node_followed..].iter() {
@@ -211,12 +188,10 @@ fn main() {
                 continue;
             } else {
                 let old_condition = is_large_node(&nodes[*node_index]) || exploration_stack.small_node_was_not_visited(*node_index);
-                let mut selected_special_cave = false;
                 let new_condition = if !old_condition {
-                    match special_small_cave {
+                    match selected_special_small_cave_at {
                         None => {
-                            special_small_cave = Some(*node_index);
-                            selected_special_cave = true;
+                            selected_special_small_cave_at = Some(stack_height);
                             true
                         },
                         Some(_) => false,
@@ -226,10 +201,10 @@ fn main() {
                     dead_end = false;
                     current_frame.max_node_followed = *node_index;
                     exploration_stack.0.push(current_frame);
-                    current_frame = Frame2 {
+                    stack_height += 1;
+                    current_frame = Frame {
                         node_index: *node_index,
                         max_node_followed: 0,
-                        selected_special_cave: selected_special_cave,
                     };
                     break;
                 }
@@ -241,8 +216,9 @@ fn main() {
             }
             current_frame = exploration_stack.0.pop().unwrap();
             current_frame.max_node_followed += 1;
-            if current_frame.selected_special_cave {
-                special_small_cave = None;
+            stack_height -= 1;
+            if selected_special_small_cave_at.map_or(false, |height| height == stack_height) {
+                selected_special_small_cave_at = None;
             }
         }
     }
