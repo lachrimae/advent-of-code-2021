@@ -111,18 +111,21 @@ fn main() {
     }
 
     // rearticulate the graph as a 2-dimensional vector of booleans
-    let mut adjacency_matrix: Vec<Vec<bool>> = vec![vec![false; nodes.len()]; nodes.len()];
-    for node in nodes.iter() {
-        for edge in edge_list.iter() {
-            if edge.contains(node) {
-                let n1_index = nodes.iter().position(|x| x == node).unwrap();
-                let n2 = edge.other_one(node.to_string()).unwrap();
-                let n2_index = nodes.iter().position(|x| x == n2).unwrap();
-                adjacency_matrix[n1_index][n2_index] = true;
-                adjacency_matrix[n2_index][n1_index] = true;
+    let adjacency_matrix: Vec<Vec<bool>> = {
+        let mut adjacency_matrix: Vec<Vec<bool>> = vec![vec![false; nodes.len()]; nodes.len()];
+        for node in nodes.iter() {
+            for edge in edge_list.iter() {
+                if edge.contains(node) {
+                    let n1_index = nodes.iter().position(|x| x == node).unwrap();
+                    let n2 = edge.other_one(node.to_string()).unwrap();
+                    let n2_index = nodes.iter().position(|x| x == n2).unwrap();
+                    adjacency_matrix[n1_index][n2_index] = true;
+                    adjacency_matrix[n2_index][n1_index] = true;
+                }
             }
         }
-    }
+        adjacency_matrix
+    };
 
     let start_index = nodes.iter().position(|x| x == &"start").unwrap();
     let end_index = nodes.iter().position(|x| x == &"end").unwrap();
