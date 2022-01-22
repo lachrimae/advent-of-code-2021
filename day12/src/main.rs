@@ -1,6 +1,5 @@
 use std::io::BufRead;
 use std::string::String;
-use std::vec;
 use std::vec::Vec;
 
 struct UnorderedPair<T> {
