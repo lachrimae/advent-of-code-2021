@@ -53,8 +53,6 @@ struct Frame {
     max_node_followed: usize,
 }
 
-pub struct Stack(Vec<Frame>);
-
 fn is_large_node(node: &String) -> bool {
     for c in node.chars() {
         if !c.is_uppercase() {
@@ -64,15 +62,13 @@ fn is_large_node(node: &String) -> bool {
     return true;
 }
 
-impl Stack {
-    fn small_node_was_not_visited(&self, node_index: usize) -> bool {
-        for frame in &self.0 {
-            if frame.node_index == node_index {
-                return false;
-            }
+fn small_node_was_not_visited(exploration_stack: &Vec<Frame>, node_index: usize) -> bool {
+    for frame in exploration_stack {
+        if frame.node_index == node_index {
+            return false;
         }
-        return true;
     }
+    return true;
 }
 
 fn main() {
@@ -133,7 +129,7 @@ fn main() {
 
     // set up the solution to part1
     let mut paths_to_end: u32 = 0;
-    let mut exploration_stack: Stack = Stack(vec![]);
+    let mut exploration_stack: Vec<Frame> = vec![];
     let mut current_frame = Frame {
         node_index: start_index,
         max_node_followed: 0,
@@ -156,11 +152,11 @@ fn main() {
                 paths_to_end += 1;
                 continue;
             } else if is_large_node(&nodes[*node_index])
-                || exploration_stack.small_node_was_not_visited(*node_index)
+                || small_node_was_not_visited(&exploration_stack, *node_index)
             {
                 dead_end = false;
                 current_frame.max_node_followed = *node_index;
-                exploration_stack.0.push(current_frame);
+                exploration_stack.push(current_frame);
                 current_frame = Frame {
                     node_index: *node_index,
                     max_node_followed: 0,
@@ -169,17 +165,17 @@ fn main() {
             }
         }
         if dead_end {
-            if exploration_stack.0.len() == 0 {
+            if exploration_stack.len() == 0 {
                 break;
             }
-            current_frame = exploration_stack.0.pop().unwrap();
+            current_frame = exploration_stack.pop().unwrap();
             current_frame.max_node_followed += 1;
         }
     }
     println!("{}", paths_to_end);
 
     paths_to_end = 0;
-    let mut exploration_stack: Stack = Stack(vec![]);
+    let mut exploration_stack: Vec<Frame> = vec![];
     let mut current_frame = Frame {
         node_index: start_index,
         max_node_followed: 0,
@@ -206,7 +202,7 @@ fn main() {
                 continue;
             } else {
                 let old_condition = is_large_node(&nodes[*node_index])
-                    || exploration_stack.small_node_was_not_visited(*node_index);
+                    || small_node_was_not_visited(&exploration_stack, *node_index);
                 let new_condition = if !old_condition {
                     match selected_special_small_cave_at {
                         None => {
@@ -221,7 +217,7 @@ fn main() {
                 if old_condition || new_condition {
                     dead_end = false;
                     current_frame.max_node_followed = *node_index;
-                    exploration_stack.0.push(current_frame);
+                    exploration_stack.push(current_frame);
                     stack_height += 1;
                     current_frame = Frame {
                         node_index: *node_index,
@@ -232,10 +228,10 @@ fn main() {
             }
         }
         if dead_end {
-            if exploration_stack.0.len() == 0 {
+            if exploration_stack.len() == 0 {
                 break;
             }
-            current_frame = exploration_stack.0.pop().unwrap();
+            current_frame = exploration_stack.pop().unwrap();
             current_frame.max_node_followed += 1;
             stack_height -= 1;
             if selected_special_small_cave_at.map_or(false, |height| height == stack_height) {
