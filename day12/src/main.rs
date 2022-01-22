@@ -1,7 +1,7 @@
-use std::vec;
-use std::vec::Vec;
 use std::io::BufRead;
 use std::string::String;
+use std::vec;
+use std::vec::Vec;
 
 struct UnorderedPair<T> {
     lesser: T,
@@ -44,8 +44,6 @@ impl<T: std::cmp::Ord + Clone> UnorderedPair<T> {
             None
         }
     }
-
-    
 }
 
 struct Frame {
@@ -84,6 +82,7 @@ fn main() {
         return;
     }
 
+    // represent the graph as a list of edges
     let edge_list: Vec<UnorderedPair<String>> = {
         let mut edge_list: Vec<UnorderedPair<String>> = vec![];
         let file_name = args.last().unwrap();
@@ -101,6 +100,8 @@ fn main() {
         edge_list
     };
 
+    // extract a vector of all the nodes. each node will be
+    // uniquely identified by its index in this vector.
     let mut nodes: Vec<String> = vec![];
     for edge in edge_list.iter() {
         let lesser = String::from(edge.lesser());
@@ -113,6 +114,7 @@ fn main() {
         }
     }
 
+    // rearticulate the graph as a 2-dimensional vector of booleans
     let mut adjacency_matrix: Vec<Vec<bool>> = vec![vec![false; nodes.len()]; nodes.len()];
     for node in nodes.iter() {
         for edge in edge_list.iter() {
@@ -129,6 +131,7 @@ fn main() {
     let start_index = nodes.iter().position(|x| x == &"start").unwrap();
     let end_index = nodes.iter().position(|x| x == &"end").unwrap();
 
+    // set up the solution to part1
     let mut paths_to_end: u32 = 0;
     let mut exploration_stack: Stack = Stack(vec![]);
     let mut current_frame = Frame {
@@ -139,7 +142,12 @@ fn main() {
 
     loop {
         dead_end = true;
-        for (node_index, is_adjacent) in adjacency_matrix[current_frame.node_index].iter().enumerate().collect::<Vec<(usize, &bool)>>()[current_frame.max_node_followed..].iter() {
+        for (node_index, is_adjacent) in adjacency_matrix[current_frame.node_index]
+            .iter()
+            .enumerate()
+            .collect::<Vec<(usize, &bool)>>()[current_frame.max_node_followed..]
+            .iter()
+        {
             if !(*is_adjacent) {
                 continue;
             } else if *node_index == start_index {
@@ -147,7 +155,9 @@ fn main() {
             } else if *node_index == end_index {
                 paths_to_end += 1;
                 continue;
-            } else if is_large_node(&nodes[*node_index]) || exploration_stack.small_node_was_not_visited(*node_index) {
+            } else if is_large_node(&nodes[*node_index])
+                || exploration_stack.small_node_was_not_visited(*node_index)
+            {
                 dead_end = false;
                 current_frame.max_node_followed = *node_index;
                 exploration_stack.0.push(current_frame);
@@ -174,29 +184,40 @@ fn main() {
         node_index: start_index,
         max_node_followed: 0,
     };
+    // the solution to part2 is very similar to the solution to part1,
+    // but we track whether we have visited any small caves twice using
+    // these two variables:
     let mut selected_special_small_cave_at: Option<usize> = None;
     let mut stack_height: usize = 0;
     loop {
         dead_end = true;
-        for (node_index, is_adjacent) in adjacency_matrix[current_frame.node_index].iter().enumerate().collect::<Vec<(usize, &bool)>>()[current_frame.max_node_followed..].iter() {
+        for (node_index, is_adjacent) in adjacency_matrix[current_frame.node_index]
+            .iter()
+            .enumerate()
+            .collect::<Vec<(usize, &bool)>>()[current_frame.max_node_followed..]
+            .iter()
+        {
             if !(*is_adjacent) {
                 continue;
             } else if *node_index == start_index {
-                continue
+                continue;
             } else if *node_index == end_index {
                 paths_to_end += 1;
                 continue;
             } else {
-                let old_condition = is_large_node(&nodes[*node_index]) || exploration_stack.small_node_was_not_visited(*node_index);
+                let old_condition = is_large_node(&nodes[*node_index])
+                    || exploration_stack.small_node_was_not_visited(*node_index);
                 let new_condition = if !old_condition {
                     match selected_special_small_cave_at {
                         None => {
                             selected_special_small_cave_at = Some(stack_height);
                             true
-                        },
+                        }
                         Some(_) => false,
                     }
-                } else { false };
+                } else {
+                    false
+                };
                 if old_condition || new_condition {
                     dead_end = false;
                     current_frame.max_node_followed = *node_index;
