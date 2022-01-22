@@ -243,7 +243,7 @@ fn main() {
                 }
             }
             if dead_end {
-                if exploration_stack.len() == 0 {
+                if stack_height == 0 {
                     break;
                 }
                 current_frame = exploration_stack.pop().unwrap();
