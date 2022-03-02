@@ -108,31 +108,8 @@ pub fn main() {
         *entry = *entry / 2;
     }
 
-    let mut least = None;
-    let mut most = None;
-    for count in element_counts.values() {
-        match least {
-            None => {
-                least = Some(count);
-            }
-            Some(quantity) => {
-                if count < quantity {
-                    least = Some(count)
-                }
-            }
-        }
-        match most {
-            None => {
-                most = Some(count);
-            }
-            Some(quantity) => {
-                if count > quantity {
-                    most = Some(count)
-                }
-            }
-        }
-    }
-
+    let least = element_counts.values().min();
+    let most = element_counts.values().max();
     let difference = most.unwrap() - least.unwrap();
     println!("{:?}", difference);
 }
