@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::vec::Vec;
 use std::io::BufRead;
+use std::vec::Vec;
 
 pub struct Mutation {
     left: char,
@@ -28,7 +28,13 @@ pub fn main() {
         for rule_line in lines {
             let line = rule_line.ok().unwrap();
             let pair = line.split(" -> ").collect::<Vec<_>>();
-            rules.insert((pair[0].chars().nth(0).unwrap(), pair[0].chars().nth(1).unwrap()), pair[1].chars().nth(0).unwrap());
+            rules.insert(
+                (
+                    pair[0].chars().nth(0).unwrap(),
+                    pair[0].chars().nth(1).unwrap(),
+                ),
+                pair[1].chars().nth(0).unwrap(),
+            );
         }
         rules
     };
@@ -106,7 +112,9 @@ pub fn main() {
     let mut most = None;
     for count in element_counts.values() {
         match least {
-            None => { least = Some(count); },
+            None => {
+                least = Some(count);
+            }
             Some(quantity) => {
                 if count < quantity {
                     least = Some(count)
@@ -114,7 +122,9 @@ pub fn main() {
             }
         }
         match most {
-            None => { most = Some(count); }
+            None => {
+                most = Some(count);
+            }
             Some(quantity) => {
                 if count > quantity {
                     most = Some(count)
