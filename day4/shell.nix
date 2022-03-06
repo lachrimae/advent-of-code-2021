@@ -3,6 +3,6 @@ in
 with nixpkgs;
 mkShell {
   buildInputs = [
-    ghostscript
+    python
   ];
 }

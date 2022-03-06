@@ -1,90 +1,79 @@
-with open('input.txt') as f:
-    raw = f.read().split('\n')
-    announcement_seq = raw[0].split(',')
-    main_segment = raw[2:]
+from sys import argv
+
+class Board:
+    def __init__(self, lines):
+        self.lines = list(map(lambda line: list(map(int, line.split())), lines))
+        self.first_win_length = None
+
+    def _wins_horizontally(self, seq):
+        for line in self.lines:
+            won = True
+            for num in line:
+                if num not in seq:
+                    won = False
+                    break
+            if won:
+                return True
+        return False
+
+    def _wins_vertically(self, seq):
+        for i in range(5):
+            won = True
+            for line in self.lines:
+                if line[i] not in seq:
+                    won = False
+                    break
+            if won:
+                return True
+        return False
+
+    def wins_for_first_time(self, seq):
+        if self.first_win_length is not None:
+            if len(seq) >= self.first_win_length:
+                return False
+        won = self._wins_horizontally(seq) or self._wins_vertically(seq)
+        if self.first_win_length is None and won:
+            self.first_win_length = len(seq)
+        return won
+
+    def score(self, seq):
+        relevant_seq = seq[:self.first_win_length]
+        score = 0
+        for line in self.lines:
+            for num in line:
+                if num not in relevant_seq:
+                    score += num
+        score *= seq[self.first_win_length - 1]
+        return score
+
+def main(file_name):
+    with open(file_name, 'r') as f:
+        lines = f.readlines()
+    seq = list(map(int, lines[0].split(',')))
+    
+    file_index = 2
     boards = list()
-    board = list()
-    for line in main_segment:
-        if line == '':
-            boards.append(board)
-            board = list()
-        else:
-            cleaned_line = ''
-            was_space = False
-            for char_index in range(len(line)):
-                entry = ''
-                if (char_index == 0 or was_space) and line[char_index] == ' ':
-                    continue
-                else:
-                    cleaned_line += line[char_index]
-                    was_space = line[char_index] == ' '
-            entries = cleaned_line.split(' ')
-            board.append(entries)
-
-def find_result(boards, announcement_seq):
-    winning_board = None
-    winning_announcement = None
-    announcements_thus_far = None
-    losing_board = None
-    total_number_of_announcements = len(announcement_seq)
-    found_winner = False
-    announcements_so_far = set()
-    num_columns = len(boards[0])
-    for announcement_index in range(total_number_of_announcements):
-        announcements_so_far.add(announcement_seq[announcement_index])
-        board_index = 0
-        num_boards_left = len(boards)
-        print(num_boards_left)
-        if num_boards_left == 1:
-            losing_board = boards[0]
+    while True:
+        if file_index > len(lines):
             break
-        while board_index < num_boards_left:
-            deleted_a_board = False
-            # horizontal rows
-            won_by_row = False
-            for row in boards[board_index]:
-                row_compatible = True
-                for num in row:
-                    if num not in announcements_so_far:
-                        row_compatible = False
-                        break
-                if row_compatible:
-                    if not found_winner:
-                        winning_board = boards[board_index]
-                        winning_announcement = announcement_seq[announcement_index]
-                        announcements_thus_far = announcements_so_far.copy()
-                        found_winner = True
-                    del boards[board_index]
-                    deleted_a_board = True
-                    won_by_row = True
-                    num_boards_left -= 1
-            if not won_by_row:
-                for column_index in range(num_columns):
-                    column_compatible = True
-                    for row in boards[board_index]:
-                        if row[column_index] not in announcements_so_far:
-                            column_compatible = False
-                            break
-                    if column_compatible:
-                        if not found_winner:
-                            winning_board = boards[board_index]
-                            winning_announcement = announcement_seq[announcement_index]
-                            announcements_thus_far = announcements_so_far.copy()
-                            found_winner = True
-                        deleted_a_board = True
-                        num_boards_left -= 1
-            if not deleted_a_board:
-                board_index += 1
-    return (winning_board, winning_announcement, announcements_thus_far, losing_board)
+        new_lines = lines[file_index:file_index+5]
+        boards.append(Board(new_lines))
+        file_index += 6
 
-def score_board(board, winning_announcement, announcements_thus_far):
-    unmarked_numbers = list()
-    for row in board:
-        for num in row:
-            if num not in announcements_thus_far:
-                unmarked_numbers.append(num)
-    return int(winning_announcement) * sum(map(int, unmarked_numbers))
+    first_winner = None
+    last_winner = None
+    for l in range(1, len(seq)):
+        for board in boards:
+            if board.wins_for_first_time(seq[:l]):
+                if first_winner is None:
+                    first_winner = board
+                last_winner = board
 
-winning_board, last_number_called, announcements, losing_board = find_result(boards, announcement_seq)
-print(score_board(winning_board, last_number_called, announcements))
-print(score_board(losing_board, announcement_seq[-1], set(announcement_seq)))
+    print(first_winner.score(seq))
+    print(last_winner.score(seq))
+
+if __name__ == '__main__':
+    if len(argv) != 2:
+        print('usage: main.py <file>')
+        quit()
+    main(argv[1])
